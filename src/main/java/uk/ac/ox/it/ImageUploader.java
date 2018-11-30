@@ -4,21 +4,28 @@ import com.instructure.canvas.api.DepositApi;
 import com.instructure.canvas.api.FilesApi;
 import com.instructure.canvas.model.Deposit;
 import com.instructure.canvas.model.Upload;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collections;
-import java.util.LinkedHashMap;
+import java.util.Comparator;
 import java.util.Map;
+import java.util.TreeMap;
 
+/**
+ * Attempts to upload an image to the course_image folder in the files area.
+ */
 public class ImageUploader {
+
+    private Logger log = LoggerFactory.getLogger(ImageUploader.class);
 
     public static final String COURSE_IMAGE = "/course_image";
     public static final String RESIZED = "resized";
+    private int uploaded;
+    private int bytesUploaded;
+
     private FilesApi filesApi;
     private DepositApi depositApi;
 
@@ -27,23 +34,54 @@ public class ImageUploader {
         this.depositApi = depositApi;
     }
 
-    public Integer uploadResized(Integer courseId, byte[] image, String format) throws IOException {
+    public Integer uploadResized(Integer courseId, byte[] image, String format) {
+        if (image.length == 0) {
+            throw new IllegalArgumentException("Image can't be empty");
+        }
+        if (courseId == null) {
+            throw new IllegalArgumentException("Course ID can't be empty");
+        }
         String filename = RESIZED + "." + Utils.toExtension(format);
-        Upload upload = filesApi.uploadFile(courseId.toString(), filename , null, null, null, COURSE_IMAGE, null, Collections.emptyList());
-        Map<String, Object> params = new LinkedHashMap<>();
-        // Have to sort the params.
-        params.put("key", upload.getUploadParams().remove("key"));
+        Upload upload = filesApi.uploadFile(courseId.toString(), filename , null, null, null, COURSE_IMAGE, "rename", Collections.emptyList());
+        Map<String, Object> params = new TreeMap<>(new KeyFirstComparator());
         params.putAll(upload.getUploadParams());
         params.put("file", image);
 
         try {
             Deposit deposit = depositApi.upload(new URI(upload.getUploadUrl()), params);
             // Unpublish our upload so it doesn't show up.
+            // We also set the display name of our file.
             filesApi.updateFile(deposit.getId().toString(), null, null, null, null, null, true, null);
+            uploaded++;
+            bytesUploaded += image.length;
             return deposit.getId();
 
         } catch (URISyntaxException e) {
             throw new RuntimeException("Failed to create URI.", e);
+        }
+    }
+
+    public void cleanup() {
+        log.info("Images uploaded: {}, Bytes uploaded: {}", uploaded, bytesUploaded);
+    }
+
+
+    /**
+     * Needed to put the key as the first parameter in the map which is needed for AWS S3 uploads
+     */
+    public static class KeyFirstComparator implements Comparator<String> {
+
+        public static final String KEY = "key";
+
+        @Override
+        public int compare(String o1, String o2) {
+            if (KEY.equals(o1)) {
+                return -1;
+            }
+            if (KEY.equals(o2)) {
+                return 1;
+            }
+            return o1.compareTo(o2);
         }
     }
 }

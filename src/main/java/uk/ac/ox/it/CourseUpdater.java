@@ -2,6 +2,9 @@ package uk.ac.ox.it;
 
 import com.instructure.canvas.api.CoursesApi;
 
+/**
+ * Updates the course to use the new course image.
+ */
 public class CourseUpdater {
 
     private CoursesApi coursesApi;
