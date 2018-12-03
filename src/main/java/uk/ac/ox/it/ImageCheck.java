@@ -86,6 +86,7 @@ public class ImageCheck implements Callable<Void> {
             throw new MessageException("Configuration is not a file: " + configFile.getPath());
         }
         CanvasApiClientFactory factory = new CanvasApiClientFactory(configFile);
+        factory.setDebug(debug);
         ApiClient client;
         try {
             client = factory.getClient();

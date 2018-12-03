@@ -7,10 +7,11 @@ Running
 =======
 
 ```
-Usage: imagecheck [-d] [-a=<accountId>] -c=<configFile> [-h=<desiredHeight>]
-                  [-o=<originalDirectory>] [-r=<resizedDirectory>]
-                  [-w=<desiredWidth>]
+Usage: imagecheck [-d] [--debug] [-a=<accountId>] -c=<configFile>
+                  [-h=<desiredHeight>] [-o=<originalDirectory>]
+                  [-r=<resizedDirectory>] [-w=<desiredWidth>]
 Scans all course images and attempts to resize those that are too large
+      --debug     Output debugging information
   -a, --account=<accountId>
                   Canvas account to process. (default: 1)
   -c, --config=<configFile>
@@ -24,6 +25,7 @@ Scans all course images and attempts to resize those that are too large
                   Directory to put resized images in.
   -w, --width=<desiredWidth>
                   Desired width of images. (default: 262)
+
 ```
 
 Notes
@@ -31,4 +33,7 @@ Notes
 
 To get an executable that works on UNIX (Linux/Mac) we just concatenate a shell script onto the front of the JAR and drop result in `./target/imagecheck`. This allows you to run it simply from the command line.
 
-You can adjust the logging level with `-Dorg.slf4j.simpleLogger.defaultLogLevel=info`
+You can adjust the logging level with `-Dorg.slf4j.simpleLogger.defaultLogLevel=ebug` but to do this you need to run the program without the wrapper so the arguments are passed to the JVM and not interprited as program arguments (which can't be found). This is useful when passing the `--debug` flag which at the moment outputs all the feign calls  Eg:
+
+    java -Dorg.slf4j.simpleLogger.defaultLogLevel=debug -jar target/imagecheck -d -c test.properties --debug
+    

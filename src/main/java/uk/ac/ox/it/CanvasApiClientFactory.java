@@ -4,6 +4,7 @@ import com.instructure.canvas.api.DepositApi;
 import com.instructure.canvas.invoker.ApiClient;
 import com.instructure.canvas.invoker.auth.ApiKeyAuth;
 import feign.Feign;
+import feign.Logger;
 import feign.form.FormEncoder;
 import feign.jackson.JacksonDecoder;
 import feign.okhttp.OkHttpClient;
@@ -19,6 +20,7 @@ import java.util.Properties;
 public class CanvasApiClientFactory {
 
     private Properties properties;
+    private boolean debug;
 
     public CanvasApiClientFactory(String resource) {
         InputStream resourceAsStream = getClass().getResourceAsStream(resource);
@@ -57,17 +59,23 @@ public class CanvasApiClientFactory {
         apiClient.addAuthorization("OAUTH", new ApiKeyAuth("header", "Authorization"));
         apiClient.setApiKey("Bearer "+ getOrException(properties, "canvas.token"));
         apiClient.setBasePath(getOrException(properties, "canvas.url"));
+        if (debug) {
+            apiClient.getFeignBuilder().logLevel(Logger.Level.FULL);
+        }
         return apiClient;
     }
 
     public DepositApi getDepositApi() {
-        return Feign.builder().encoder(new FormEncoder())
+        Feign.Builder builder = Feign.builder().encoder(new FormEncoder())
                 // Have to use the OkHttpClient as the standard one can't follow the redirect.
                 .client(new OkHttpClient())
                 .decoder(new JacksonDecoder())
-                .logger(new Slf4jLogger())
-                // When we upload files we have a complete URL so we don't need a URL.
-                .target(DepositApi.class, "http://not-used/");
+                .logger(new Slf4jLogger());
+        if (debug) {
+            builder.logLevel(Logger.Level.FULL);
+        }
+        // When we upload files we have a complete URL so we don't need a URL.
+        return builder.target(DepositApi.class, "http://not-used/");
     }
 
 
@@ -77,5 +85,9 @@ public class CanvasApiClientFactory {
             throw new IllegalArgumentException("The key "+ key+ " must be set in the configuration");
         }
         return value;
+    }
+
+    public void setDebug(boolean debug) {
+        this.debug = debug;
     }
 }
