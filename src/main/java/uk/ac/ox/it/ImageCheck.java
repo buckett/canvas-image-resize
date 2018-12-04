@@ -59,7 +59,7 @@ public class ImageCheck implements Callable<Void> {
     private File originalDirectory;
     @Option(names = {"-r", "--resized"}, description = "Directory to put resized images in.")
     private File resizedDirectory;
-    @Option(names = {"-s", "--summary"}, description = "Produce summary CSV report on images and resizing.")
+    @Option(names = {"-s", "--summary"}, description = "File containing summary CSV report on images and resizing. (use - for stdout)")
     private File summaryFile;
     @Option(names={"--debug"}, description = "Output debugging information")
     private boolean debug;

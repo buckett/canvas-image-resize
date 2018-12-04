@@ -7,6 +7,7 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 
 /**
  * This writes a summary of the resizing out to a CSV.
@@ -18,7 +19,13 @@ public class SummaryCsv implements Closeable {
 
     public SummaryCsv(File output) throws IOException {
         if (output != null) {
-            csvPrinter = new CSVPrinter(new FileWriter(output), CSVFormat.EXCEL);
+            Appendable appendable;
+            if ("-".equals(output.getName())) {
+                appendable = new OutputStreamWriter(System.out);
+            } else {
+                appendable = new FileWriter(output);
+            }
+            csvPrinter = new CSVPrinter(appendable, CSVFormat.EXCEL);
             csvPrinter.printRecord("Course Name", "ID", "Original Size", "New Size");
         }
     }
