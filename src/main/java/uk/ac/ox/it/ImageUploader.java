@@ -4,6 +4,7 @@ import com.instructure.canvas.api.DepositApi;
 import com.instructure.canvas.api.FilesApi;
 import com.instructure.canvas.model.Deposit;
 import com.instructure.canvas.model.Upload;
+import feign.form.FormData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,7 +46,9 @@ public class ImageUploader {
         Upload upload = filesApi.uploadFile(courseId.toString(), filename , null, null, null, COURSE_IMAGE, "rename", Collections.emptyList());
         Map<String, Object> params = new TreeMap<>(new KeyFirstComparator());
         params.putAll(upload.getUploadParams());
-        params.put("file", image);
+        // If we don't specify the filename then "null" is put in the MIME boundary and then Canvas uses this
+        // to overwrite the filename we supplied in the original upload.
+        params.put("file", new FormData("image/"+ Utils.toExtension(format), filename, image));
 
         try {
             Deposit deposit = depositApi.upload(new URI(upload.getUploadUrl()), params);
