@@ -7,8 +7,6 @@ import com.instructure.canvas.invoker.ApiClient;
 import com.instructure.canvas.invoker.PagedList;
 import com.instructure.canvas.model.Course;
 import feign.FeignException;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVPrinter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
@@ -19,7 +17,6 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collections;
@@ -62,6 +59,8 @@ public class ImageCheck implements Callable<Void> {
     private File originalDirectory;
     @Option(names = {"-r", "--resized"}, description = "Directory to put resized images in.")
     private File resizedDirectory;
+    @Option(names = {"-s", "--summary"}, description = "Produce summary CSV report on images and resizing.")
+    private File summaryFile;
     @Option(names={"--debug"}, description = "Output debugging information")
     private boolean debug;
 
@@ -111,6 +110,10 @@ public class ImageCheck implements Callable<Void> {
 
         imageUploader = new ImageUploader(client.buildClient(FilesApi.class), factory.getDepositApi());
         courseUpdater = new CourseUpdater(client.buildClient(CoursesApi.class));
+
+        if (debug) {
+            System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug");
+        }
     }
 
     public Void call() throws IOException {
@@ -121,15 +124,12 @@ public class ImageCheck implements Callable<Void> {
             params.include(Collections.singletonList("course_image"));
             params.put("per_page", "100");
             List<Course> courses = accountsApi.listActiveCoursesInAccount(accountId, params);
-            try (CSVPrinter csvPrinter = new CSVPrinter(new PrintStream(System.out), CSVFormat.EXCEL)) {
-                csvPrinter.printRecord("Course Name", "ID", "Original Size", "New Size");
+            try (SummaryCsv summaryCsv = new SummaryCsv(summaryFile)) {
                 do {
                     for (Course course : courses) {
                         try {
                             Object[] results = resizeCourseImage(course);
-                            if (results != null) {
-                                csvPrinter.printRecord(results);
-                            }
+                            summaryCsv.record(results);
                         } catch (IOException ioe) {
                             log.info("Failed to process " + course.getId().toString() + " " + ioe.getMessage());
                         }
