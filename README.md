@@ -9,7 +9,7 @@ Running
 ```
 Usage: imagecheck [-d] [--debug] [-a=<accountId>] -c=<configFile>
                   [-h=<desiredHeight>] [-o=<originalDirectory>]
-                  [-r=<resizedDirectory>] [-w=<desiredWidth>]
+                  [-r=<resizedDirectory>] [-s=<summaryFile>] [-w=<desiredWidth>]
 Scans all course images and attempts to resize those that are too large
       --debug     Output debugging information
   -a, --account=<accountId>
@@ -23,9 +23,11 @@ Scans all course images and attempts to resize those that are too large
                   Directory to put original images in.
   -r, --resized=<resizedDirectory>
                   Directory to put resized images in.
+  -s, --summary=<summaryFile>
+                  File containing summary CSV report on images and resizing. (use -
+                    for stdout)
   -w, --width=<desiredWidth>
                   Desired width of images. (default: 262)
-
 ```
 
 Notes
