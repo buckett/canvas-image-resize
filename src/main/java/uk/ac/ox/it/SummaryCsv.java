@@ -33,6 +33,7 @@ public class SummaryCsv implements Closeable {
     public void record(Object[] results) throws IOException {
         if (csvPrinter != null && results != null) {
             csvPrinter.printRecord(results);
+            csvPrinter.flush();
         }
     }
 
