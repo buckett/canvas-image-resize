@@ -23,14 +23,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 
+import static picocli.CommandLine.*;
 import static picocli.CommandLine.Option;
 
 
 /**
  * This attempts to resize course images to a sensible width/height.
  */
-@Command(description = "Scans all course images and attempts to resize those that are too large",
-        name = "imagecheck")
+@Command(name = "resize", description = "Scans all course images and attempts to resize those that are too large")
 public class ImageCheck implements Callable<Void> {
 
     private final Logger log = LoggerFactory.getLogger(ImageCheck.class);
@@ -61,18 +61,9 @@ public class ImageCheck implements Callable<Void> {
     private File resizedDirectory;
     @Option(names = {"-s", "--summary"}, description = "File containing summary CSV report on images and resizing. (use - for stdout)")
     private File summaryFile;
-    @Option(names={"--debug"}, description = "Output debugging information")
-    private boolean debug;
+    @ParentCommand
+    private Entrypoint entrypoint;
 
-    public static void main(String... args) {
-        ImageCheck check = new ImageCheck();
-        CommandLine cmd = new CommandLine(check);
-        cmd.parseWithHandlers(
-                new CommandLine.RunLast().andExit(0),
-                new MessageExceptionHandler<List<Object>>(check).andExit(1),
-                args
-        );
-    }
 
     public void init() {
         if (!configFile.exists()) {
@@ -85,7 +76,7 @@ public class ImageCheck implements Callable<Void> {
             throw new MessageException("Configuration is not a file: " + configFile.getPath());
         }
         CanvasApiClientFactory factory = new CanvasApiClientFactory(configFile);
-        factory.setDebug(debug);
+        factory.setDebug(entrypoint.debug);
         ApiClient client;
         try {
             client = factory.getClient();
@@ -111,7 +102,7 @@ public class ImageCheck implements Callable<Void> {
         imageUploader = new ImageUploader(client.buildClient(FilesApi.class), factory.getDepositApi());
         courseUpdater = new CourseUpdater(client.buildClient(CoursesApi.class));
 
-        if (debug) {
+        if (entrypoint.debug) {
             System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug");
         }
     }
@@ -185,28 +176,7 @@ public class ImageCheck implements Callable<Void> {
         return null;
     }
 
-    /**
-     * Handler that prints our a MessageException to stderr. Otherwise it prints the whole stacktrace.
-     * @param <R>
-     */
-    static class MessageExceptionHandler<R> extends CommandLine.DefaultExceptionHandler<R> {
 
-        private ImageCheck imageCheck;
-
-        MessageExceptionHandler(ImageCheck imageCheck) {
-            this.imageCheck = imageCheck;
-        }
-
-        public R handleExecutionException(CommandLine.ExecutionException ex, CommandLine.ParseResult parseResult) {
-            if (!imageCheck.debug && ex.getCause() instanceof MessageException) {
-                System.err.println("Error: "+ ex.getCause().getMessage());
-            } else {
-                throw ex;
-            }
-            return null;
-        }
-
-    }
 
     /**
      * Class to indicate it's an expected exception and we should just show the message to the user without the
