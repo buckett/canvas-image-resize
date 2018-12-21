@@ -6,4 +6,4 @@ java=java
 if [ -n "$JAVA_HOME" ]; then
     java="$JAVA_HOME/bin/java"
 fi
-exec "$java" $java_args -jar $MYSELF "$@"
+exec "$java" -Djava.awt.headless=true $java_args -jar $MYSELF "$@"
