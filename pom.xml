@@ -105,7 +105,7 @@
                 <version>0.3</version>
                 <executions>
                     <execution>
-                        <id>concatenate-css-files</id>
+                        <id>concatenate-wrapper</id>
                         <phase>package</phase> <!-- default phase -->
                         <goals>
                             <goal>cat</goal>
